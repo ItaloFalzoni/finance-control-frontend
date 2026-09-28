@@ -43,10 +43,13 @@ async function getInitialData(): Promise<{
   noAccount: boolean;
 }> {
   try {
-    const res = await fetch(`${BACKEND_URL}/api/transactions`, {
-      cache: "no-store",
-      headers: { "X-Api-Key": BACKEND_API_KEY },
-    });
+    const res = await fetch(
+      `${BACKEND_URL}/api/transactions?page=1&pageSize=50`,
+      {
+        cache: "no-store",
+        headers: { "X-Api-Key": BACKEND_API_KEY },
+      },
+    );
     if (res.status === 404) {
       return { snapshot: null, error: null, noAccount: true };
     }

@@ -110,7 +110,9 @@ export default function Dashboard({
               transactions={vm.snapshot?.transactions ?? []}
               loading={vm.loading}
               totalCount={vm.snapshot?.totalCount}
-              loadingMore={vm.loadingMore}
+              loadingMore={
+                vm.loadingMore || vm.refreshing || vm.pending !== null
+              }
               onLoadMore={vm.handleLoadMore}
             />
           </>
