@@ -15,7 +15,7 @@ interface DashboardProps {
   initialNoAccount: boolean;
 }
 
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
+function ErrorBanner({ message, onRetry, retrying }: { message: string; onRetry: () => void; retrying?: boolean }) {
   return (
     <div
       role="alert"
@@ -25,9 +25,11 @@ function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => voi
       <button
         type="button"
         onClick={onRetry}
-        className="inline-flex cursor-pointer items-center justify-center rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-2 focus-visible:outline-none"
+        disabled={retrying}
+        aria-busy={retrying || undefined}
+        className="inline-flex cursor-pointer items-center justify-center rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-2 focus-visible:outline-none"
       >
-        Tentar novamente
+        {retrying ? "Tentando novamente…" : "Tentar novamente"}
       </button>
     </div>
   );
@@ -60,6 +62,9 @@ export default function Dashboard({
     );
   }
 
+  // Retry sem snapshot mostra skeleton em vez de tela vazia.
+  const showLoading = vm.loading || (vm.refreshing && !vm.hasSnapshot);
+
   return (
     <div className="min-h-full bg-white" aria-busy={vm.refreshing || undefined}>
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10 sm:px-6">
@@ -72,21 +77,21 @@ export default function Dashboard({
           </p>
         </header>
 
-        <div aria-live="polite" className="fixed right-4 bottom-4 z-50 flex w-[calc(100%-2rem)] max-w-sm flex-col gap-3">
+        <div className="fixed right-4 bottom-4 z-50 flex w-[calc(100%-2rem)] max-w-sm flex-col gap-3">
           {vm.toasts.map((t) => (
             <Toast key={t.id} toast={t} onClose={() => vm.dismissToast(t.id)} />
           ))}
         </div>
 
         {vm.loadError && (
-          <MemoErrorBanner message={vm.loadError} onRetry={vm.handleRetry} />
+          <MemoErrorBanner message={vm.loadError} onRetry={vm.handleRetry} retrying={vm.refreshing} />
         )}
 
-        {vm.hasSnapshot || vm.loading ? (
+        {vm.hasSnapshot || showLoading ? (
           <>
             <BalanceCard
               balance={vm.snapshot?.balance ?? null}
-              loading={vm.loading}
+              loading={showLoading}
             />
 
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -108,11 +113,9 @@ export default function Dashboard({
 
             <HistoryList
               transactions={vm.snapshot?.transactions ?? []}
-              loading={vm.loading}
+              loading={showLoading}
               totalCount={vm.snapshot?.totalCount}
-              loadingMore={
-                vm.loadingMore || vm.refreshing || vm.pending !== null
-              }
+              loadingMore={vm.loadingMore}
               onLoadMore={vm.handleLoadMore}
             />
           </>

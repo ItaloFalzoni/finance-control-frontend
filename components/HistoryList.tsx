@@ -14,7 +14,7 @@ interface HistoryListProps {
 
 function SkeletonRow() {
   return (
-    <li className="flex items-center gap-4 px-5 py-4">
+    <li className="flex items-center gap-4 px-5 py-4" aria-hidden="true">
       <div className="h-4 w-2/3 animate-pulse rounded bg-zinc-100" />
       <div className="ml-auto h-4 w-24 animate-pulse rounded bg-zinc-100" />
     </li>
@@ -36,7 +36,7 @@ function TransactionRowView({ transaction: t }: RowProps) {
         <p className="truncate text-sm font-medium text-zinc-900">
           {t.description}
         </p>
-        <p className="mt-0.5 text-xs text-zinc-400">
+        <p className="mt-0.5 text-xs text-zinc-500">
           {when} · {credit ? "Entrada" : "Saída"}
         </p>
       </div>
@@ -47,7 +47,7 @@ function TransactionRowView({ transaction: t }: RowProps) {
         }`}
       >
         {credit ? "+" : "-"}
-        {formatCentsBRL(value).replace("-", "")}
+        {formatCentsBRL(Math.abs(value))}
       </p>
     </li>
   );
