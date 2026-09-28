@@ -23,13 +23,15 @@ interface RawHistory {
 function isValidTransaction(value: unknown): value is AccountSnapshot["transactions"][number] {
   if (typeof value !== "object" || value === null) return false;
   const t = value as Record<string, unknown>;
-  return (
-    typeof t.id === "string" &&
-    (typeof t.amount === "number" || typeof t.amount === "string") &&
-    typeof t.type === "number" &&
-    typeof t.description === "string" &&
-    typeof t.createdAt === "string"
-  );
+  if (
+    typeof t.id !== "string" ||
+    typeof t.description !== "string" ||
+    typeof t.createdAt !== "string"
+  )
+    return false;
+  if (t.type !== 1 && t.type !== 2) return false;
+  if (toIntCentsStrict(t.amount as number | string) === null) return false;
+  return true;
 }
 
 /**
@@ -48,6 +50,7 @@ async function getInitialData(): Promise<{
       {
         cache: "no-store",
         headers: { "X-Api-Key": BACKEND_API_KEY },
+        signal: AbortSignal.timeout(10_000),
       },
     );
     if (res.status === 404) {

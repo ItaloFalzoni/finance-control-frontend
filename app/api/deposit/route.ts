@@ -6,6 +6,7 @@ const BACKEND_API_KEY = process.env.BACKEND_API_KEY ?? "";
 export const dynamic = "force-dynamic";
 
 const DESCRIPTION_MAX = 500;
+const UPSTREAM_TIMEOUT_MS = 10_000;
 
 function sanitizedUpstream(body: unknown): Record<string, unknown> {
   if (typeof body !== "object" || body === null) {
@@ -56,6 +57,7 @@ export async function POST(request: Request) {
         "X-Api-Key": BACKEND_API_KEY,
       },
       body: JSON.stringify({ amount: body.amount, description }),
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
     const resBody = await res.json().catch(() => null);
 

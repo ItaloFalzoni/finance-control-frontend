@@ -61,11 +61,14 @@ function friendlyMessage(status: number | undefined, body: unknown): string {
   if (status === 401 || code === "Unauthorized") {
     return CONFIG_ERROR_MESSAGE;
   }
-  if (status === 422 || code === "Insufficient funds") {
+  if (code === "Insufficient funds") {
     return "Saldo insuficiente para realizar este saque.";
   }
   if (code === "Domain error") {
     return "Não foi possível concluir a operação. Verifique os dados e tente novamente.";
+  }
+  if (status === 422) {
+    return "Saldo insuficiente para realizar este saque.";
   }
   if (status === 400 || code === "Validation failed") {
     return "Verifique o valor e a descrição informados e tente novamente.";
@@ -112,13 +115,16 @@ interface RawHistory {
 function isValidTransaction(value: unknown): value is Transaction {
   if (typeof value !== "object" || value === null) return false;
   const t = value as Record<string, unknown>;
-  return (
-    typeof t.id === "string" &&
-    (typeof t.amount === "number" || typeof t.amount === "string") &&
-    typeof t.type === "number" &&
-    typeof t.description === "string" &&
-    typeof t.createdAt === "string"
-  );
+  if (
+    typeof t.id !== "string" ||
+    typeof t.description !== "string" ||
+    typeof t.createdAt !== "string"
+  )
+    return false;
+  if (t.type !== 1 && t.type !== 2) return false;
+  // amount precisa ser centavos válidos — lixo não vira R$ 0,00 na tela.
+  if (toIntCentsStrict(t.amount as number | string) === null) return false;
+  return true;
 }
 
 function toInt(value: unknown, fallback: number): number {

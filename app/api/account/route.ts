@@ -5,6 +5,8 @@ const BACKEND_API_KEY = process.env.BACKEND_API_KEY ?? "";
 
 export const dynamic = "force-dynamic";
 
+const UPSTREAM_TIMEOUT_MS = 10_000;
+
 function toIntCentsStrict(value: unknown): number | null {
   const n = Number(value);
   if (!Number.isFinite(n)) return null;
@@ -15,13 +17,15 @@ function toIntCentsStrict(value: unknown): number | null {
 function isValidTransaction(value: unknown): boolean {
   if (typeof value !== "object" || value === null) return false;
   const t = value as Record<string, unknown>;
-  return (
-    typeof t.id === "string" &&
-    (typeof t.amount === "number" || typeof t.amount === "string") &&
-    typeof t.type === "number" &&
-    typeof t.description === "string" &&
-    typeof t.createdAt === "string"
-  );
+  if (
+    typeof t.id !== "string" ||
+    typeof t.description !== "string" ||
+    typeof t.createdAt !== "string"
+  )
+    return false;
+  if (t.type !== 1 && t.type !== 2) return false;
+  if (toIntCentsStrict(t.amount) === null) return false;
+  return true;
 }
 
 /** Repassa só campos conhecidos do erro upstream (nada de corpo cru). */
@@ -68,6 +72,7 @@ export async function GET(request: Request) {
       {
         cache: "no-store",
         headers: { "X-Api-Key": BACKEND_API_KEY },
+        signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
       },
     );
     const body = await res.json().catch(() => null);
@@ -124,6 +129,7 @@ export async function POST() {
       method: "POST",
       cache: "no-store",
       headers: { "X-Api-Key": BACKEND_API_KEY },
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
     const body = await res.json().catch(() => null);
 

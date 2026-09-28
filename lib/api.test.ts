@@ -86,6 +86,17 @@ describe("deposit / withdraw", () => {
     );
   });
 
+  it("traduz 422 Domain error (overflow) em mensagem genérica", async () => {
+    mockFetchOnce(jsonResponse(422, { error: "Domain error" }));
+
+    const err = await deposit(1, "Overflow").catch((e) => e);
+
+    expect(err).toBeInstanceOf(ApiError);
+    expect((err as ApiError).message).toBe(
+      "Não foi possível concluir a operação. Verifique os dados e tente novamente.",
+    );
+  });
+
   it("traduz 401 em mensagem de configuração", async () => {
     mockFetchOnce(jsonResponse(401, { error: "Unauthorized" }));
 
@@ -190,6 +201,25 @@ describe("getAccount", () => {
     const snapshot = await getAccount();
 
     expect(snapshot.transactions).toHaveLength(1);
+  });
+
+  it("filtra transação com amount inválido ou type desconhecido", async () => {
+    mockFetchOnce(
+      jsonResponse(200, {
+        accountId: "a1",
+        balance: 100,
+        transactions: [
+          tx(),
+          tx({ id: "bad-amount", amount: "abc" }),
+          tx({ id: "bad-type", type: 0 }),
+        ],
+      }),
+    );
+
+    const snapshot = await getAccount();
+
+    expect(snapshot.transactions).toHaveLength(1);
+    expect(snapshot.transactions[0].id).toBe("t1");
   });
 
   it("repasse de paginação: envia page/pageSize e lê o meta", async () => {
