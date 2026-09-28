@@ -15,7 +15,7 @@ Contexto para agentes de IA. **Leia este arquivo inteiro antes de qualquer taref
 ## Visão em 30 segundos
 
 - **Next.js 16.3.6 (App Router) + React 19.2 + TypeScript 5 (`strict`) + Tailwind 4 (PostCSS)**. Runtime = 3 pacotes: `next`, `react`, `react-dom`. Sem estado global, sem lib de UI. Testes: Vitest + Testing Library (`npm.cmd run test`: `lib/format`, `lib/api`, `components/Dashboard|OperationForm|WelcomeScreen`).
-- Fluxo: `app/page.tsx` (server component) busca **saldo + histórico numa única requisição** (RNF-05) e passa a `components/Dashboard.tsx`, que é dono de **todo** o estado (`useState`: snapshot, loading, refreshing, loadError, noAccount, creating, pending, toasts em fila).
+- Fluxo: `app/page.tsx` (server component) busca **saldo + histórico numa única requisição** (RNF-05) e passa a `components/Dashboard.tsx` (View; estado via `hooks/useDashboardViewModel`: snapshot, loading, refreshing, loadError, noAccount, creating, pending, toasts em fila).
 - O browser **nunca** chama a API C#: as chamadas saem same-origin para o proxy `app/api/*` (evita CORS e esconde a API key). Contrato em [Integração](#integração--contrato-com-o-backend).
 - Sem login, sessão ou cookie; nada é persistido no cliente.
 - Textos de UI e comentários em **pt-BR**; identificadores em inglês.
@@ -61,18 +61,24 @@ app/
     deposit/route.ts    # POST → repassa {amount, description}
     withdraw/route.ts   # POST → repassa {amount, description}
 components/
-  Dashboard.tsx         # "use client" — dono do estado; refresh silencioso, snapshot preservado em erro, toasts em fila, trava ambos os forms durante envio, first-run
+  Dashboard.tsx         # "use client" — View; estado em hooks/useDashboardViewModel (toasts+query+ações)
   Dashboard.test.tsx     # First-run, snapshot+erro, retry sem snapshot
-  WelcomeScreen.tsx     # "use client" — first-run: só botão Começar, loading + erro
+  WelcomeScreen.tsx     # "use client" — first-run: título + botão Começar, loading + erro
   WelcomeScreen.test.tsx # Botão, loading, erro + retry
   OperationForm.tsx     # "use client" — formulário deposit|withdraw, valida no cliente (aria-invalid)
   OperationForm.test.tsx # Validação cliente: valor, descrição, saldo, submit válido
   BalanceCard.tsx       # Saldo (props do servidor; skeleton com role=status)
   HistoryList.tsx       # Extrato; crédito/débito via type (1=entrada); skeleton com role=status; "Ver mais" pagina
-  Toast.tsx             # "use client" — success|error, auto-dismiss 6s (pai renderiza fila com key)
+  Toast.tsx             # "use client" — success=status|error=alert (timers em hooks/useToasts)
+hooks/
+  useDashboardViewModel.ts # Fachada MVVM: compõe query+ações+toasts, callbacks estáveis
+  useAccountData.ts        # Query: snapshot, refresh silencioso, "Ver mais" com dedupe
+  useAccountActions.ts     # Escritas: creating/pending + busyRef anti-duplo-clique
+  useOperationFormViewModel.ts # Form: parse pt-BR, validação cliente, limpa só se ok
+  useToasts.ts             # Fila máx 3, auto-dismiss 6s, dono dos timers
 lib/
-  api.ts                # Tipos (sem typeLabel), toIntCentsStrict (null em lixo), fetch 10s, ApiError, mensagens (401=config, 422=saldo, 502=rede)
-  api.test.ts           # Contrato: 401/422-conflict/400/404/500/409, getAccount estrito, isCredit por type, chaves únicas
+  api.ts                # Tipos (sem typeLabel), toIntCentsStrict (null em lixo), fetch 10s, ApiError, mensagens (401=config, 422 saldo vs Domain error, 502=rede)
+  api.test.ts           # Contrato: 401/422-saldo/422-Domain/400/404/500/409, getAccount estrito, isCredit por type, chaves únicas
   format.ts             # formatCentsBRL (único /100), formatDateTime, parseAmountInputToCents
   format.test.ts        # Testes de formatação/parse (sem legados)
 next.config.ts          # Sem opções customizadas
@@ -91,7 +97,7 @@ O browser **nunca** chama a API C# (exceção: `app/page.tsx` faz SSR direto com
 | `/api/account` | GET | `GET {BACKEND_URL}/api/transactions?page=&pageSize=` | Repassa `?page/?pageSize` (valida: page ≥ 1, 1 ≤ pageSize ≤ 200); normaliza `currentBalance` → `balance` + `page/pageSize/totalCount` (estrito: lixo vira `502`, nunca `0`); valida shape; sanitiza erro upstream; `404` vira first-run ("Começar") |
 | `/api/account` | POST | `POST {BACKEND_URL}/api/accounts` | Corpo vazio; `409` vira sucesso em `lib/api.ts` (segue para `GET`) |
 | `/api/deposit` | POST | `POST {BACKEND_URL}/api/deposit` | Corpo `{amount, description}` — `amount` int em **centavos** + `description` 1-500 (proxy rejeita com `400`); responde `201`; erro upstream sanitizado (só `error/detail/errors`) |
-| `/api/withdraw` | POST | `POST {BACKEND_URL}/api/withdraw` | Idem; `422` vira "Saldo insuficiente…" em `lib/api.ts` |
+| `/api/withdraw` | POST | `POST {BACKEND_URL}/api/withdraw` | Idem; `422 Insufficient funds` vira "Saldo insuficiente…", `422 Domain error` (overflow) vira genérica em `lib/api.ts` |
 
 Regras do contrato:
 
