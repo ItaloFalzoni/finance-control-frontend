@@ -52,7 +52,7 @@ function OperationFormView({
             id={vm.amountId}
             name="amount"
             type="text"
-            inputMode="decimal"
+            inputMode="numeric"
             autoComplete="off"
             placeholder="0,00"
             value={vm.amount}

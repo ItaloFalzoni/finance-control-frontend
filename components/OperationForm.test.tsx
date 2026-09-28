@@ -61,7 +61,8 @@ describe("OperationForm", () => {
       balance: 5000,
     });
 
-    await user.type(form.getByLabelText(/valor/i), "100");
+    // Máscara bancária: dígitos viram centavos, então "10000" = R$ 100,00.
+    await user.type(form.getByLabelText(/valor/i), "10000");
     await user.type(form.getByLabelText(/descrição/i), "Fornecedor");
     await user.click(form.getByRole("button"));
 
@@ -75,7 +76,8 @@ describe("OperationForm", () => {
     const user = userEvent.setup();
     const { onSubmit, form } = renderForm({ balance: 0 });
 
-    await user.type(form.getByLabelText(/valor/i), "1.234,56");
+    // Máscara bancária: dígitos "123456" = R$ 1.234,56.
+    await user.type(form.getByLabelText(/valor/i), "123456");
     await user.type(form.getByLabelText(/descrição/i), "  Aporte  ");
     await user.click(form.getByRole("button"));
 
@@ -86,6 +88,15 @@ describe("OperationForm", () => {
     expect(
       (form.getByLabelText(/descrição/i) as HTMLInputElement).value,
     ).toBe("");
+  });
+
+  it("máscara bancária preenche da direita para a esquerda", async () => {
+    const user = userEvent.setup();
+    const { form } = renderForm();
+    const input = form.getByLabelText(/valor/i) as HTMLInputElement;
+
+    await user.type(input, "1234");
+    expect(input.value).toBe("12,34");
   });
 
   it("limpa o erro ao digitar novamente", async () => {

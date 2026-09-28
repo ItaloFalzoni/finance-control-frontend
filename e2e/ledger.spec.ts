@@ -34,7 +34,8 @@ test("depósito de R$ 100 mostra toast de sucesso e soma ao saldo", async ({
   const before = await readBalanceCents(page);
 
   const deposit = page.getByRole("region", { name: "Depositar" });
-  await deposit.getByLabel("Valor (R$)").fill("100");
+  // Máscara bancária: "100,00" vira dígitos 10000 = R$ 100,00.
+  await deposit.getByLabel("Valor (R$)").fill(centsToInput(10_000));
   await deposit
     .getByLabel("Descrição")
     .fill(`E2E depósito ${Date.now()}`);

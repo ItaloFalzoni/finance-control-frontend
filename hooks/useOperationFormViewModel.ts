@@ -3,7 +3,7 @@
 import { useCallback, useId, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import type { OperationKind } from "@/lib/api";
-import { formatCentsBRL, parseAmountInputToCents } from "@/lib/format";
+import { formatCentsBRL, maskAmountInput, parseAmountInputToCents } from "@/lib/format";
 
 interface UseOperationFormParams {
   kind: OperationKind;
@@ -52,7 +52,9 @@ export function useOperationFormViewModel({
 
   const handleAmountChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setAmount(event.target.value);
+      // Máscara bancária: preenche da direita para a esquerda
+      // (primeiro centavos, depois reais).
+      setAmount(maskAmountInput(event.target.value));
       setFormError(null);
     },
     [],

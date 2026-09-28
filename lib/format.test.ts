@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   formatCentsBRL,
+  formatCentsToAmountInput,
   formatDateTime,
+  maskAmountInput,
   parseAmountInputToCents,
 } from "@/lib/format";
 
@@ -68,5 +70,33 @@ describe("parseAmountInputToCents", () => {
     expect(parseAmountInputToCents("12abc")).toBeNull();
     expect(parseAmountInputToCents("-5")).toBeNull();
     expect(parseAmountInputToCents("1,2,3")).toBeNull();
+  });
+});
+
+describe("maskAmountInput", () => {
+  it("preenche da direita para a esquerda (primeiro centavos)", () => {
+    expect(maskAmountInput("")).toBe("");
+    expect(maskAmountInput("1")).toBe("0,01");
+    expect(maskAmountInput("12")).toBe("0,12");
+    expect(maskAmountInput("123")).toBe("1,23");
+    expect(maskAmountInput("1234")).toBe("12,34");
+    expect(maskAmountInput("123456")).toBe("1.234,56");
+  });
+
+  it("ignora formatação existente e reaplica a máscara", () => {
+    expect(maskAmountInput("1.234,56")).toBe("1.234,56");
+    expect(maskAmountInput("0,01")).toBe("0,01");
+  });
+
+  it("campo vazio continua vazio e zero vira 0,00", () => {
+    expect(maskAmountInput("abc")).toBe("");
+    expect(maskAmountInput("0")).toBe("0,00");
+  });
+});
+
+describe("formatCentsToAmountInput", () => {
+  it("formata centavos sem símbolo para o campo", () => {
+    expect(formatCentsToAmountInput(1)).toBe("0,01");
+    expect(formatCentsToAmountInput(123456)).toBe("1.234,56");
   });
 });

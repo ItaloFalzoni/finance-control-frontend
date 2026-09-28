@@ -3,6 +3,11 @@ const brl = new Intl.NumberFormat("pt-BR", {
   currency: "BRL",
 });
 
+const amountInput = new Intl.NumberFormat("pt-BR", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 const dateTime = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
   month: "2-digit",
@@ -18,6 +23,28 @@ const dateTime = new Intl.DateTimeFormat("pt-BR", {
  */
 export function formatCentsBRL(cents: number): string {
   return brl.format(cents / 100);
+}
+
+/**
+ * Formata centavos para o campo "Valor (R$)" sem o símbolo (ex.: 123456 → "1.234,56").
+ * Usado pela máscara bancária do formulário.
+ */
+export function formatCentsToAmountInput(cents: number): string {
+  return amountInput.format(cents / 100);
+}
+
+/**
+ * Máscara bancária: só dígitos importam e o preenchimento cresce da
+ * direita para a esquerda (primeiro centavos, depois reais).
+ * Ex.: "" → "", "1" → "0,01", "12" → "0,12", "123" → "1,23".
+ * Limita a 15 dígitos para ficar dentro de Number.MAX_SAFE_INTEGER.
+ */
+export function maskAmountInput(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length === 0) return "";
+  const limited = digits.replace(/^0+/, "").slice(0, 15);
+  if (limited.length === 0) return formatCentsToAmountInput(0);
+  return formatCentsToAmountInput(Number(limited));
 }
 
 export function formatDateTime(iso: string): string {
