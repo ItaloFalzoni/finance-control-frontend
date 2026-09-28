@@ -1,24 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { formatBRL, formatDateTime, parseAmountInput } from "@/lib/format";
+import {
+  formatCentsBRL,
+  formatDateTime,
+  parseAmountInputToCents,
+} from "@/lib/format";
 
-describe("formatBRL", () => {
-  it("formata valor decimal no padrão brasileiro", () => {
+describe("formatCentsBRL", () => {
+  it("formata centavos no padrão brasileiro", () => {
     // Evita igualdade exata: o Intl usa NBSP (\u00A0) após "R$".
-    expect(formatBRL(1234.56)).toContain("1.234,56");
-    expect(formatBRL(1234.56)).toContain("R$");
+    expect(formatCentsBRL(123456)).toContain("1.234,56");
+    expect(formatCentsBRL(123456)).toContain("R$");
   });
 
-  it("formata zero com duas casas decimais", () => {
-    expect(formatBRL(0)).toContain("0,00");
+  it("formata zero centavos com duas casas decimais", () => {
+    expect(formatCentsBRL(0)).toContain("0,00");
   });
 
-  it("formata valor negativo com sinal de menos", () => {
-    const formatted = formatBRL(-100);
+  it("formata centavos negativos com sinal de menos", () => {
+    const formatted = formatCentsBRL(-10000);
     expect(formatted).toContain("-");
     expect(formatted).toContain("100,00");
   });
 });
-
 describe("formatDateTime", () => {
   it("formata ISO válida como dd/mm/aaaa hh:mm", () => {
     const formatted = formatDateTime("2026-09-27T14:30:00.000Z");
@@ -31,33 +34,39 @@ describe("formatDateTime", () => {
   });
 });
 
-describe("parseAmountInput", () => {
-  it("aceita vírgula decimal (1234,56)", () => {
-    expect(parseAmountInput("1234,56")).toBe(1234.56);
+describe("parseAmountInputToCents", () => {
+  it("converte vírgula decimal para centavos (1234,56 → 123456)", () => {
+    expect(parseAmountInputToCents("1234,56")).toBe(123456);
   });
 
-  it("aceita milhar com ponto e decimal com vírgula (1.234,56)", () => {
-    expect(parseAmountInput("1.234,56")).toBe(1234.56);
+  it("converte milhar com ponto e decimal com vírgula (1.234,56 → 123456)", () => {
+    expect(parseAmountInputToCents("1.234,56")).toBe(123456);
   });
 
-  it("aceita ponto decimal (1234.56)", () => {
-    expect(parseAmountInput("1234.56")).toBe(1234.56);
+  it("converte ponto decimal para centavos (1234.56 → 123456)", () => {
+    expect(parseAmountInputToCents("1234.56")).toBe(123456);
   });
 
   it("remove espaços nas pontas e no meio", () => {
-    expect(parseAmountInput("  100  ")).toBe(100);
-    expect(parseAmountInput("1 000,50")).toBe(1000.5);
+    expect(parseAmountInputToCents("  100  ")).toBe(10000);
+    expect(parseAmountInputToCents("1 000,50")).toBe(100050);
+  });
+
+  it("rejeita mais de 2 casas decimais (fração de centavo)", () => {
+    expect(parseAmountInputToCents("10,999")).toBeNull();
+    expect(parseAmountInputToCents("1,005")).toBeNull();
+    expect(parseAmountInputToCents("1.234,567")).toBeNull();
   });
 
   it("rejeita entrada vazia", () => {
-    expect(parseAmountInput("")).toBeNull();
-    expect(parseAmountInput("   ")).toBeNull();
+    expect(parseAmountInputToCents("")).toBeNull();
+    expect(parseAmountInputToCents("   ")).toBeNull();
   });
 
   it("rejeita texto que não é número", () => {
-    expect(parseAmountInput("abc")).toBeNull();
-    expect(parseAmountInput("12abc")).toBeNull();
-    expect(parseAmountInput("-5")).toBeNull();
-    expect(parseAmountInput("1,2,3")).toBeNull();
+    expect(parseAmountInputToCents("abc")).toBeNull();
+    expect(parseAmountInputToCents("12abc")).toBeNull();
+    expect(parseAmountInputToCents("-5")).toBeNull();
+    expect(parseAmountInputToCents("1,2,3")).toBeNull();
   });
 });
