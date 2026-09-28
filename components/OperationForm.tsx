@@ -76,7 +76,7 @@ function OperationFormView({
             name="description"
             type="text"
             autoComplete="off"
-            maxLength={200}
+            maxLength={500}
             placeholder={
               kind === "deposit" ? "Ex.: aporte de capital" : "Ex.: pagamento de fornecedor"
             }

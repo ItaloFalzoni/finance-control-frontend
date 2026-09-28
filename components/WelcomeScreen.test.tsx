@@ -1,5 +1,3 @@
-"use client";
-
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, fireEvent } from "@testing-library/react";
 import WelcomeScreen from "@/components/WelcomeScreen";
@@ -7,9 +5,10 @@ import WelcomeScreen from "@/components/WelcomeScreen";
 afterEach(() => cleanup());
 
 describe("WelcomeScreen", () => {
-  it("mostra somente o botão Começar", () => {
+  it("mostra título, explicação e botão Começar", () => {
     render(<WelcomeScreen pending={false} error={null} onStart={() => {}} />);
 
+    expect(screen.getByRole("heading", { name: "Conta empresarial" })).toBeDefined();
     const button = screen.getByRole("button", { name: "Começar" });
     expect(button.textContent).toBe("Começar");
     expect(button.hasAttribute("disabled")).toBe(false);

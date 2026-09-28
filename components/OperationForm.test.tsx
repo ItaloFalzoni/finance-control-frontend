@@ -87,4 +87,17 @@ describe("OperationForm", () => {
       (form.getByLabelText(/descrição/i) as HTMLInputElement).value,
     ).toBe("");
   });
+
+  it("limpa o erro ao digitar novamente", async () => {
+    const user = userEvent.setup();
+    const { form } = renderForm();
+
+    await user.type(form.getByLabelText(/valor/i), "0");
+    await user.click(form.getByRole("button"));
+    expect(form.getByRole("alert")).toBeDefined();
+
+    await user.type(form.getByLabelText(/valor/i), "5");
+
+    expect(form.queryByRole("alert")).toBeNull();
+  });
 });
