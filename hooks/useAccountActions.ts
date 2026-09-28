@@ -15,7 +15,6 @@ interface UseAccountActionsParams {
   refresh: () => Promise<boolean>;
   notifySuccess: (message: string) => void;
   notifyError: (message: string) => void;
-  noAccount: boolean;
 }
 
 function toErrorMessage(err: unknown): string {
@@ -30,7 +29,6 @@ export function useAccountActions({
   refresh,
   notifySuccess,
   notifyError,
-  noAccount,
 }: UseAccountActionsParams) {
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -48,9 +46,7 @@ export function useAccountActions({
       const ok = await refresh();
       if (!ok) {
         setCreateError(
-          noAccount
-            ? "Conta não encontrada após a criação. Tente novamente."
-            : NETWORK_ERROR_MESSAGE,
+          "Não foi possível carregar a conta após a criação. Recarregue a tela.",
         );
       }
     } catch (err) {
@@ -59,7 +55,7 @@ export function useAccountActions({
       setCreating(false);
       busyRef.current = false;
     }
-  }, [noAccount, refresh]);
+  }, [refresh]);
 
   const handleOperation = useCallback(
     async (
@@ -82,7 +78,7 @@ export function useAccountActions({
             ? kind === "deposit"
               ? `Depósito de ${formatCentsBRL(amount)} registrado com sucesso.`
               : `Saque de ${formatCentsBRL(amount)} registrado com sucesso.`
-            : "Operação registrada, mas não foi possível atualizar a tela. Tente novamente para ver o saldo atual.",
+            : "Operação registrada, mas não foi possível recarregar a tela. Use o botão Tentar novamente acima — não repita a operação.",
         );
         // Só limpa o form quando a tela refletiu a operação.
         return ok;

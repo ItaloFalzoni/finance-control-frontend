@@ -49,7 +49,7 @@ export function useDashboardViewModel({
   });
 
   const { creating, createError, pending, handleStart, handleOperation } =
-    useAccountActions({ refresh, notifySuccess, notifyError, noAccount });
+    useAccountActions({ refresh, notifySuccess, notifyError });
 
   // Callbacks por operação estáveis: evitam recriar closures no JSX e
   // invalidar o `memo` dos forms a cada render do Dashboard.

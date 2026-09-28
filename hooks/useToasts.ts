@@ -26,12 +26,23 @@ export function useToasts() {
     (kind: ToastData["kind"], message: string) => {
       seq.current += 1;
       const id = seq.current;
-      setToasts((prev) => [...prev.slice(-(MAX_TOASTS - 1)), { id, kind, message }]);
       const timer = setTimeout(() => {
         setToasts((prev) => prev.filter((t) => t.id !== id));
         timers.current.delete(id);
       }, TOAST_TTL_MS);
       timers.current.set(id, timer);
+      setToasts((prev) => {
+        const next = [...prev, { id, kind, message }].slice(-MAX_TOASTS);
+        // Limpa timers de toasts evictados (sem isso o timer órfão dispara no-op).
+        const alive = new Set(next.map((t) => t.id));
+        for (const [tid, tm] of timers.current) {
+          if (tid !== id && !alive.has(tid)) {
+            clearTimeout(tm);
+            timers.current.delete(tid);
+          }
+        }
+        return next;
+      });
     },
     [],
   );

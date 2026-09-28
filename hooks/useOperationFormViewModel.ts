@@ -53,6 +53,7 @@ export function useOperationFormViewModel({
   const handleAmountChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       setAmount(event.target.value);
+      setFormError(null);
     },
     [],
   );
@@ -60,6 +61,7 @@ export function useOperationFormViewModel({
   const handleDescriptionChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       setDescription(event.target.value);
+      setFormError(null);
     },
     [],
   );
